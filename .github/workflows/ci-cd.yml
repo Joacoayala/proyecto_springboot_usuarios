@@ -4,15 +4,68 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
 
-  build:
-
+  test:
+    name: Pruebas y Cobertura
     runs-on: ubuntu-latest
-
     steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
 
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Dar permisos Maven
+        run: chmod +x mvnw
+
+      - name: Ejecutar pruebas con cobertura
+        run: ./mvnw clean verify
+
+  sonarcloud:
+    name: Analisis SonarCloud
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Dar permisos Maven
+        run: chmod +x mvnw
+
+      - name: Ejecutar pruebas con cobertura
+        run: ./mvnw clean verify
+
+      - name: Analisis SonarCloud
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          ./mvnw sonar:sonar \
+            -Dsonar.projectKey=Joacoayala_proyecto_springboot_usuarios \
+            -Dsonar.organization=joacoayala \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.token=${SONAR_TOKEN}
+
+  build:
+    name: Build Docker
+    runs-on: ubuntu-latest
+    needs: sonarcloud
+    steps:
       - name: Clonar repositorio
         uses: actions/checkout@v4
 
@@ -28,18 +81,6 @@ jobs:
       - name: Compilar proyecto
         run: ./mvnw clean package -DskipTests
 
-      - name: Analisis SonarQube
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          ./mvnw sonar:sonar \
-            -Dsonar.projectKey=PatricioDuoc_proyecto_springboot_usuarios \
-            -Dsonar.organization=patricioduoc \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.token=${SONAR_TOKEN}
-
-      - name: Build Docker
+      - name: Build imagen Docker
         run: docker build -t springboot-devops .
 
-      - name: Deploy Docker Compose
-        run: docker compose up -d --build
