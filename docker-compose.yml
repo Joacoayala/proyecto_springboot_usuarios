@@ -6,21 +6,24 @@ services:
     image: mysql:8
     container_name: mysql-db
     restart: always
-
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root-2023
       MYSQL_DATABASE: usuariosdb
-
     ports:
       - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot-2023"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   app:
     build: .
     container_name: springboot-app
     restart: always
-
     ports:
       - "8080:8080"
-
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
+
