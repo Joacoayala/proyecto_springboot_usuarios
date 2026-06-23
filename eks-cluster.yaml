@@ -1,0 +1,19 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: devops-cluster
+  region: us-east-1
+  version: "1.31"
+
+iam:
+  serviceRoleARN: arn:aws:iam::390977896945:role/LabRole
+
+managedNodeGroups:
+  - name: ng-devops
+    instanceType: t3.medium
+    desiredCapacity: 2
+    minSize: 2
+    maxSize: 3
+    iam:
+      instanceRoleARN: arn:aws:iam::390977896945:role/LabRole
